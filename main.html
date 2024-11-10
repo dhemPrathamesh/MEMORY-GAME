@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #f0f0f0;
+        }
+        .game-container {
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .game-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .grid {
+            display: grid;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .card {
+            width: 100px;
+            height: 100px;
+            background-color: #3498db;
+            border-radius: 5px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 40px;
+            color: white;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+        .card.flipped {
+            transform: rotateY(180deg);
+            background-color: #2ecc71;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+    </style>
+</head>
+<body>
+    <h1>Memory Game</h1>
+    <div class="game-container">
+        <div class="game-info">
+            <div>Time: <span id="time">0</span>s</div>
+            <div>Moves: <span id="moves">0</span></div>
+        </div>
+        <div id="grid" class="grid"></div>
+        <button id="start">Start Game</button>
+    </div>
+
+    <script>
+        const grid = document.getElementById('grid');
+        const startButton = document.getElementById('start');
+        const timeDisplay = document.getElementById('time');
+        const movesDisplay = document.getElementById('moves');
+
+        let cards = [];
+        let flippedCards = [];
+        let matchedPairs = 0;
+        let moves = 0;
+        let time = 0;
+        let timer;
+        let gameStarted = false;
+
+        const emojis = ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮'];
+        let difficulty = 4; // Start with 4x4 grid (8 pairs)
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        function createCard(emoji) {
+            const card = document.createElement('div');
+            card.classList.add('card');
+            card.dataset.emoji = emoji;
+            card.addEventListener('click', flipCard);
+            return card;
+        }
+
+        function flipCard() {
+            if (!gameStarted) return;
+            if (flippedCards.length < 2 && !this.classList.contains('flipped')) {
+                this.classList.add('flipped');
+                this.textContent = this.dataset.emoji;
+                flippedCards.push(this);
+
+                if (flippedCards.length === 2) {
+                    moves++;
+                    movesDisplay.textContent = moves;
+                    checkMatch();
+                }
+            }
+        }
+
+        function checkMatch() {
+            const [card1, card2] = flippedCards;
+            if (card1.dataset.emoji === card2.dataset.emoji) {
+                matchedPairs++;
+                flippedCards = [];
+                if (matchedPairs === cards.length / 2) {
+                    endGame();
+                }
+            } else {
+                setTimeout(() => {
+                    card1.classList.remove('flipped');
+                    card2.classList.remove('flipped');
+                    card1.textContent = '';
+                    card2.textContent = '';
+                    flippedCards = [];
+                }, 1000);
+            }
+        }
+
+        function startGame() {
+            grid.innerHTML = '';
+            cards = [];
+            flippedCards = [];
+            matchedPairs = 0;
+            moves = 0;
+            time = 0;
+            gameStarted = true;
+
+            const pairs = emojis.slice(0, (difficulty * difficulty) / 2);
+            const gameEmojis = shuffleArray([...pairs, ...pairs]);
+
+            grid.style.gridTemplateColumns = `repeat(${difficulty}, 1fr)`;
+
+            gameEmojis.forEach(emoji => {
+                const card = createCard(emoji);
+                cards.push(card);
+                grid.appendChild(card);
+            });
+
+            movesDisplay.textContent = moves;
+            timeDisplay.textContent = time;
+
+            clearInterval(timer);
+            timer = setInterval(() => {
+                time++;
+                timeDisplay.textContent = time;
+            }, 1000);
+
+            startButton.textContent = 'Restart Game';
+        }
+
+        function endGame() {
+            clearInterval(timer);
+            gameStarted = false;
+            alert(`Congratulations! You won in ${time} seconds with ${moves} moves.`);
+            difficulty = Math.min(difficulty + 2, 8); // Increase difficulty, max 8x8
+            startButton.textContent = 'Start Next Level';
+        }
+
+        startButton.addEventListener('click', startGame);
+    </script>
+</body>
+</html>
